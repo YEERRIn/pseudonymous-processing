@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from crud.db_crud import read_data
 from api.api_v1.endpoints.second_preprocessing import second_preprocess
+import time
 
 router = APIRouter()
 
@@ -10,21 +11,25 @@ age = [0, 0, 0, 0]
 @router.get('/third')
 async def second_preprocess():
     
-    #for문 실행 전에 start 찍기 
-    # 1. 데이터 베이스 읽어오기
+    # 1. 시작 시간 기록
+    start_time = time.time()
+    print(f"[level 3] Start time: {start_time}", flush=True)
+    
+    # 2. 데이터 베이스 읽어오기
     data = await read_data()
     
     
     #print(data, flush=True)
     
+    # 3. 사람 객체만 가져오기
     for privacy in data:
         privacy = privacy.dict()
         
         for cell in privacy['cells']:
-            #2. age_distribution 삭제
+            #4. age_distribution 삭제
             del cell['age_distribution']
             
-            #3. age_distribution 추가 
+            #5. age_distribution 추가 
             cell['age_distribution'] ={
                 "youth": 0,
                 "middle_aged": 0,
@@ -34,17 +39,16 @@ async def second_preprocess():
             
             print(cell, flush=True)
 
-            #4. 2단계 가명 처리 
+            #6. 2단계 가명 처리 
             for person in cell['people']:
                 
                 #print(person, flush=True)
                 
-                # 3. IMSI 정보 지우기, 전화번호 지우기
+                # 7. IMSI 정보 지우기, 전화번호 지우기
                 del person['mobile_number']
                 del person['IMSI']
                 
-                # 4. 나이 가명 처리 
-            
+                # 8. 나이 가명 처리 
                 if person['age'] > 20 and person['age'] <30 :
                     person['age'] = 'mid_20s'
                     age[0]+=1
@@ -57,8 +61,7 @@ async def second_preprocess():
                     person['age'] = 'mid_40s'   
                     age[1]+=1
                 
-            
-            
+            # 9. 나이 분포 업데이트
             cell['age_distribution']['youth'] = age[0]
             cell['age_distribution']['middle_aged'] = age[1]
             cell['age_distribution']['senior'] = age[2]
@@ -66,8 +69,12 @@ async def second_preprocess():
         
         update_data.append(privacy) 
         
-        #end시간 여기다가 찍고 update_data에 시간 추가 -> 화면에 반환하기 
-        
+    # 10. 종료 시간 기록
+    end_time = time.time()
+    print(f"[level 3] End time: {end_time}", flush=True)
+
+    # 11. 실행 시간 계산
+    execution_time = end_time - start_time
+    print(f"[level 3] Execution time: {execution_time} seconds", flush=True)
                      
     return update_data
-        
